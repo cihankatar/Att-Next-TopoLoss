@@ -1,21 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torch_topological.nn import WassersteinDistance,CubicalComplex
-from torch_topological.nn import VietorisRipsComplex
 from visualization import *
 #from skimage.feature import local_binary_pattern 
 #import gudhi as gd
 #from gudhi.wasserstein import wasserstein_distance
-
-
 #import gudhi as gd
 
 class Topological_Loss(torch.nn.Module):
 
     def __init__(self, lam=0.1):
         super().__init__()
+        from torch_topological.nn import WassersteinDistance,CubicalComplex
+        from torch_topological.nn import VietorisRipsComplex
         self.lam                = lam
         #self.vr                 = VietorisRipsComplex(dim=self.dimension)
         self.cubicalcomplex     = CubicalComplex()
@@ -40,83 +37,6 @@ class Topological_Loss(torch.nn.Module):
             totalloss   +=topo_loss
         loss             = self.lam * totalloss/predictions.shape[0]
         return loss
-
-'''
-
-    # predictions_q  = torch.round(prediction  * 10) / 10 
-    # masks_q  = torch.round(masks[i]  * ) / 10
-    
-    gd.plot_persistence_diagram(diag1)
-    
-    plt.figure()
-    plt.imshow(images[i].permute(2,1,0))    
-    peristent_diag(labels[i][0],masks[i],pi_mask,model_output[i][0],predictions[i],pi_pred,topo_loss)
-
-    barcod(edges_mask,pi_mask,point_m,edges_pred,pi_pred,point_p,topo_loss)
-    barcod(thresholded_mask,pi_mask_c,point_m,thresholded_pred,pi_pred_c,point_p,topo_loss_c)
-
-    figures (model_output,sobel_predictions,bins_pred,point_p,labels,sobel_masks,bins_mask,point_m,i,topo_loss)
-    barcod(labels[i][0],pi_mask,point_m,model_output[i][0],pi_pred,point_p,1,topo_loss) 
-    barcod(edges_mask,pi_mask,point_m,edges_pred,pi_pred,point_p,topo_loss)
-            #mask      = (masks[i] - masks[i].min()) / (masks[i].max() - masks[i].min())
-            # bins_pred = soft_point_cloud_extraction(prediction)
-            # bins_mask = soft_point_cloud_extraction(masks[i])
-
-            # num_points = 100
-            # if bins_pred.shape[0]>num_points:
-            #     point_p = bins_pred[torch.randperm(bins_pred.shape[0])[:num_points]]
-            # else:
-            #     point_p = bins_pred
-            # if bins_mask.shape[0]>num_points:
-            #     point_m = bins_mask[torch.randperm(bins_mask.shape[0])[:num_points]]
-            # else:
-            #     point_m = bins_mask
-
-            # num_points = 100
-            # min_pred = bins_pred.min(dim=0).values
-            # max_pred = bins_pred.max(dim=0).values
-            # min_mask = bins_mask.min(dim=0).values
-            # max_mask = bins_mask.max(dim=0).values
-            # bounding_box_pred = torch.prod(max_pred - min_pred)
-            # bounding_box_mask = torch.prod(max_mask - min_mask)
-            # estimated_grid_pred = bounding_box_pred / num_points
-            # estimated_grid_mask = bounding_box_mask / num_points
-            # grid_size1 = torch.sqrt(estimated_grid_pred)
-            # grid_size2 = torch.sqrt(estimated_grid_mask)
-
-            # if bins_pred.shape[0]>num_points:
-            #     grid_indices    = (bins_pred // grid_size1).int()
-            #     unique_indices, inverse_indices = torch.unique(grid_indices, dim=0, return_inverse=True)
-            #     point_p         = torch.zeros_like(unique_indices, dtype=torch.float32)
-            #     counts          = torch.bincount(inverse_indices)
-            #     counts          = counts.float()
-            #     sums            = torch.zeros_like(point_p)
-            #     sums.index_add_(0, inverse_indices, bins_pred.float())
-            #     point_p = sums / counts.unsqueeze(1)
-            # else:
-            #     point_p = bins_pred
-            
-            # if bins_mask.shape[0]>num_points:
-
-            #     grid_indices    = (bins_mask // grid_size2).int()
-            #     unique_indices, inverse_indices = torch.unique(grid_indices, dim=0, return_inverse=True)
-            #     point_m         = torch.zeros_like(unique_indices, dtype=torch.float32)
-            #     counts          = torch.bincount(inverse_indices)
-            #     counts          = counts.float()
-            #     sums            = torch.zeros_like(point_m)
-            #     sums.index_add_(0, inverse_indices, bins_mask.float())
-            #     point_m = sums / counts.unsqueeze(1)
-
-            # else:
-            #     point_m = bins_mask
-''' 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-
-
 
 class Dice_CE_Loss():
     def __init__(self):

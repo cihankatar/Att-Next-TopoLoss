@@ -12,11 +12,11 @@ from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-from models.Model import model_dice_bce    #256
-from models.FAT_NET import FAT_Net          #224
-from models.MISSFormer import MISSFormer    #224
+#from models.Model import model_dice_bce
+#from models.FAT_NET import FAT_Net          #224
+#from models.MISSFormer import MISSFormer    #224
 
-def load_deeplabv3(num_classes):            #256
+def load_deeplabv3(num_classes):
     """Load the DeepLabV3 model and adjust for the dataset."""
     model = torch.hub.load('pytorch/vision:v0.10.0', 'deeplabv3_resnet50', pretrained=True)
     model.classifier[4] = torch.nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1))
@@ -60,7 +60,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2016_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2016_1', "supervised", True,False,False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -85,16 +85,11 @@ def main():
     checkpoint_path = folder_path+str(model.__class__.__name__)+str(res)
     optimizer = Adam(model.parameters(), lr=config['learningrate'])
     scheduler = CosineAnnealingLR(optimizer, config['epochs'], eta_min=config['learningrate'] / 10)
-    loss_fn = Dice_CE_Loss()
+    loss_fn=Dice_CE_Loss()
     
-    if addtopoloss:
-        from utils.Loss import Topological_Loss
-        topo_loss_fn = Topological_Loss(lam=0.1).to(device)
-
     print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
     print('Train loader transform',train_loader.dataset.tr)
     print('Val loader transform',val_loader.dataset.tr)
-    print('model name : {model.__class__.__name__}')
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""
@@ -118,7 +113,6 @@ def main():
                 loss_ = loss_fn.Dice_BCE_Loss(out, labels)
 
                 if addtopoloss:
-                    from utils.Loss import Topological_Loss
                     topo_loss = topo_loss_fn(out, labels)
                     total_loss = loss_ + topo_loss
                     epoch_topo_loss += topo_loss.item()
@@ -140,7 +134,7 @@ def main():
                     total_loss.backward()
                     optimizer.step()
                     scheduler.step()
-
+                    
         if not training and num_batches > 0:
             val_metrics = [x / num_batches for x in metrics_sum]
             return epoch_loss / len(loader), epoch_loss_ / len(loader), epoch_topo_loss / len(loader), val_metrics
@@ -190,6 +184,7 @@ def main():
             print(f"Best model saved with Val Loss: {val_loss:.4f}")
 
     wandb.finish()
+
 
 if __name__ == "__main__":
     main()
