@@ -95,16 +95,6 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
-   # Log initial values for metrics (epoch 0)
-    wandb.log({
-        "Epoch": 0,
-        "Val IoU": 0.0,
-        "Val Dice": 0.0,
-        "Val Recall": 0.0,
-        "Val Precision": 0.0,
-        "Val Accuracy": 0.0
-    })
-    
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""

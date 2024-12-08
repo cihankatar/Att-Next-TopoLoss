@@ -5,13 +5,14 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader2 import loader
+from data.data_loader5 import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
-#from models.Model4 import model_bce_topo      #256
+
+from models.Model import model_dice_bce      #256
 #from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
@@ -76,7 +77,7 @@ def main():
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    model = load_deeplabv3(num_classes).to(device)
+    model = model_dice_bce(num_classes, args.mode, args.imnetpr).to(device)
     #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)

@@ -5,7 +5,7 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader import loader
+from data.data_loader4 import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
@@ -93,16 +93,7 @@ def main():
     print('Train loader transform',train_loader.dataset.tr)
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
-
-   # Log initial values for metrics (epoch 0)
-    wandb.log({
-        "Epoch": 0,
-        "Val IoU": 0.0,
-        "Val Dice": 0.0,
-        "Val Recall": 0.0,
-        "Val Precision": 0.0,
-        "Val Accuracy": 0.0
-    })
+    
     
     # Training and Validation Loops
     def run_epoch(loader, training=True):
