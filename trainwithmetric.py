@@ -12,11 +12,11 @@ from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-from models.Model import model_dice_bce    #256
-from models.FAT_NET import FAT_Net          #224
-from models.MISSFormer import MISSFormer    #224
+from models.Model import model_dice_bce      #256
+#from models.FAT_NET import FAT_Net          #224
+#from models.MISSFormer import MISSFormer    #224
 
-def load_deeplabv3(num_classes):            #256
+def load_deeplabv3(num_classes):             #256
     """Load the DeepLabV3 model and adjust for the dataset."""
     model = torch.hub.load('pytorch/vision:v0.10.0', 'deeplabv3_resnet50', pretrained=True)
     model.classifier[4] = torch.nn.Conv2d(256, num_classes, kernel_size=(1, 1), stride=(1, 1))
@@ -60,7 +60,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2016_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, True, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -73,13 +73,12 @@ def main():
                       args.imsize, args.cutoutpr, args.cutoutbox, aug, args.shuffle, args.sratio, data)
 
     train_loader = create_loader(args.aug)
-    args.aug=False
     val_loader = create_loader(False)
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    #model = model_dice_bce(num_classes, args.mode, args.imnetpr).to(device)
-    model = load_deeplabv3(num_classes).to(device)
+    model = model_dice_bce(num_classes, args.mode, args.imnetpr).to(device)
+    #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
     checkpoint_path = folder_path+str(model.__class__.__name__)+str(res)
@@ -94,7 +93,24 @@ def main():
     print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
     print('Train loader transform',train_loader.dataset.tr)
     print('Val loader transform',val_loader.dataset.tr)
-    print('model name : {model.__class__.__name__}')
+    print(f"model config : {checkpoint_path}")
+
+   # Log initial values for metrics (epoch 0)
+    wandb.log({
+        "Epoch": 0,
+        "Train Loss": 0.0,
+        "Train Dice Loss": 0.0,
+        "Train Topo Loss": 0.0,
+        "Val Loss": 0.0,
+        "Val Dice Loss": 0.0,
+        "Val Topo Loss": 0.0,
+        "Val IoU": 0.0,
+        "Val Dice": 0.0,
+        "Val Recall": 0.0,
+        "Val Precision": 0.0,
+        "Val Accuracy": 0.0
+    })
+    
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""

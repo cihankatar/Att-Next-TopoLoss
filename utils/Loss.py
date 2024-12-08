@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from visualization import *
+from torch_topological.nn import WassersteinDistance,CubicalComplex
 #from skimage.feature import local_binary_pattern 
 #import gudhi as gd
 #from gudhi.wasserstein import wasserstein_distance
@@ -11,8 +12,6 @@ class Topological_Loss(torch.nn.Module):
 
     def __init__(self, lam=0.1):
         super().__init__()
-        from torch_topological.nn import WassersteinDistance,CubicalComplex
-        from torch_topological.nn import VietorisRipsComplex
         self.lam                = lam
         #self.vr                 = VietorisRipsComplex(dim=self.dimension)
         self.cubicalcomplex     = CubicalComplex()

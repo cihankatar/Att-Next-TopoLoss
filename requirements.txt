@@ -15,6 +15,10 @@ ptflops
 scipy==1.11.4
 
 #conda create --name=seg --override-channels --channel=pytorch --channel=nvidia --channel=conda-forge pytorch torchvision torchaudio cudatoolkit tqdm scikit-learn glob2 pillow matplotlib einops timm wandb pip
+#if use torch iwith pip handle torch.sixt_ module
+#pip install gudhi
+#pip install pot 
+#pip install giotto-ph
 
 # appdirs==1.4.4
 # click==8.1.7

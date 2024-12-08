@@ -105,19 +105,11 @@ def parser_init(name,desc,
     args_key=[]
     args_value=[]
     res=[]
-    config_key=[]
-    config_value=[]
 
     
     for key,value in parser.parse_args()._get_kwargs():
-        if args.mode == "ssl":
-            if key=='sratio'or key=='train' or key=='noclasses' or key=='cutoutpr'or key=='cutmixpr'or key=='cutoutbox' or key=='workers':
-                continue
-        elif args.mode == "supervised":
-            if key=='sratio'or key=='sslmode_modelname'or key=='train'or key=='noclasses' or key=='workers':
-                continue
-        elif args.mode == "ssl_pretrained":
-            if key=='train'or key=='noclasses' or key=='workers' or key=="sslmode_modelname":
+        if args.mode == "supervised":
+            if key=='sratio'or key=='sslmode_modelname'or key=='train'or key=='noclasses' or key=='workers' or key=='mode':
                 continue
 
         args_key.append(key)
@@ -125,30 +117,6 @@ def parser_init(name,desc,
 
     for i in range(len(args_key)):
         res.append(args_key[i]+"="+args_value[i])
-
-
-    if args.mode == "ssl_pretrained":
-        for key,value in configs["ssl_config"].items():
-            if key=="imnetpr":
-                value=args.imnetpr
-
-            if key=="sslmode_modelname":
-                value=args.sslmode_modelname
-
-            if key=="bsize":
-                value=args.bsize
-                args.bsize = 8      # returning supervised config to save 
-                
-            if key=="epochs":
-                value=args.epochs
-                args.epochs = 150   # returning supervised config to save 
-
-            if key=='sratio'or key=='train' or key=='noclasses' or key=='cutoutpr'or key=='cutmixpr'or key=='cutoutbox' or key=='workers':
-                continue
-
-            config_key.append(key)
-            config_value.append(str(value))
-
 
     return args,res
 
@@ -177,29 +145,13 @@ def wandb_init (WANDB_API_KEY,WANDB_DIR,args,data):
     if train: 
             
         if torch.cuda.is_available():
-            if training_mode =="ssl":
-                project_name = data+"_ssl"
-
-            elif training_mode =="ssl_pretrained":
-                project_name = data+"_ssl_pretrained_segmentation_task"
-
-            else:
-                project_name = data+"_segmentation_task_supervised"
+            project_name = "Att-Next-TopoLoss-Train"
 
         else:
-            if training_mode =="ssl":
-                project_name = data+"temp_training_ssl_local"
-            elif training_mode =="ssl_pretrained":
-                project_name = data+"_temp_ssl_pretrained_segmentation_task_local"
-            else:
-                project_name = "temp_segmentation_task_local_"+data
+            project_name = "Temp_Att-Next-TopoLoss_local"
                 
     else:
-        if training_mode =="ssl":
-            project_name = data+"_test_ssl"
-
-        else:
-            project_name = data+"_segmentation_supervised_test"
+        project_name = data+"Att-Next-TopoLoss_Test"
 
                 
     wandb.init(

@@ -410,7 +410,7 @@ class Encoder(nn.Module):
         return x,features
 
 
-def encoder_function(config_res,training_mode=None,pretrained=False,**kwargs):
+def encoder_function(training_mode=None,pretrained=False,**kwargs):
 
     model = Encoder(
         depths=[1,1,1,1],
@@ -425,7 +425,7 @@ def encoder_function(config_res,training_mode=None,pretrained=False,**kwargs):
             ML_DATA_OUTPUT = os.environ["ML_DATA_OUTPUT"]
         else:
             ML_DATA_OUTPUT = os.environ["ML_DATA_OUTPUT_LOCAL"]
-        checkpoint_path = ML_DATA_OUTPUT+str(model.__class__.__name__)+"["+str(config_res)+"]"
+        checkpoint_path = ML_DATA_OUTPUT+str(model.__class__.__name__)
         
         if os.path.exists(checkpoint_path):
             if pretrained == True:
