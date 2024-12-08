@@ -12,8 +12,8 @@ from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-#from models.Model4 import model_bce_topo      #256
-from models.FAT_NET import FAT_Net          #224
+from models.Model4 import model_bce_topo      #256
+#from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
 def load_deeplabv3(num_classes):             #256
@@ -60,7 +60,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, True, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -77,7 +77,7 @@ def main():
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    model = FAT_Net().to(device)
+    model = model_bce_topo(num_classes, args.mode, args.imnetpr).to(device)
     #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
@@ -98,12 +98,6 @@ def main():
    # Log initial values for metrics (epoch 0)
     wandb.log({
         "Epoch": 0,
-        "Train Loss": 0.0,
-        "Train Dice Loss": 0.0,
-        "Train Topo Loss": 0.0,
-        "Val Loss": 0.0,
-        "Val Dice Loss": 0.0,
-        "Val Topo Loss": 0.0,
         "Val IoU": 0.0,
         "Val Dice": 0.0,
         "Val Recall": 0.0,

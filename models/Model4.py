@@ -127,18 +127,15 @@ class Bottleneck(nn.Module):
 #####   MODEL #####
     
 class model_bce_topo(nn.Module):
-    def __init__(self,n_classes,config_res=None,training_mode=None,imnetpretrained=None):
+    def __init__(self,n_classes,training_mode=None,imnetpretrained=None):
         super().__init__()
         
         self.n_classes     = n_classes
-        self.config_res    = config_res
         self.training_mode = training_mode
         self.bottleneck    = Bottleneck(512, 512)
         size_dec           = [512,256,128,64]
 
-        if not self.training_mode ==  "ssl_pretrained": 
-            self.encoder      = encoder_function(config_res,training_mode,imnetpretrained)
-
+        self.encoder      = encoder_function(training_mode,imnetpretrained)
         self.decoder          = decoder_function()
         
         #self.GLAM                = nn.ModuleList([BasicBlock(in_f, out_f) for in_f, out_f in zip(size_dec[::-1],size_dec[::-1])])  
@@ -192,7 +189,7 @@ class model_bce_topo(nn.Module):
         out = self.act(out)
 
         out = self.pwconv2(out)
-        out=out.permute(0, 3, 1, 2)
+        out = out.permute(0, 3, 1, 2)
         
         return out
 

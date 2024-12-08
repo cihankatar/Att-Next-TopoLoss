@@ -6,12 +6,11 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
 from data.data_loader import loader
-from utils.Loss_b import Dice_CE_Loss
+from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
-
 #from models.Model4 import model_bce_topo      #256
 from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
@@ -98,12 +97,6 @@ def main():
    # Log initial values for metrics (epoch 0)
     wandb.log({
         "Epoch": 0,
-        "Train Loss": 0.0,
-        "Train Dice Loss": 0.0,
-        "Train Topo Loss": 0.0,
-        "Val Loss": 0.0,
-        "Val Dice Loss": 0.0,
-        "Val Topo Loss": 0.0,
         "Val IoU": 0.0,
         "Val Dice": 0.0,
         "Val Recall": 0.0,

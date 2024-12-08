@@ -4,8 +4,6 @@ import torch.nn as nn
 #from models.Metaformer import caformer_s18_in21ft1k
 from models.enc import encoder_function
 from models.dec import decoder_function
-import torch.nn as nn
-
 
 def device_f():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
