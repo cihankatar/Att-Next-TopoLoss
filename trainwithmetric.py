@@ -60,7 +60,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, True, False
+    data, training_mode, train, addtopoloss, aug_reg = 'PH2Dataset', "supervised", True, True, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)

@@ -395,6 +395,3 @@ class MISSFormer(nn.Module):
 
         return tmp_0
 
-image=torch.rand(1,3,224,224)         
-model = MISSFormer()
-o=model(image)
