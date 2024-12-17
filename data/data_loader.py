@@ -1,11 +1,13 @@
 from torch.utils.data import DataLoader
 
 from data.Custom_Dataset import dataset
+from utils.Test_Train_Split import ssl_data_split
 from glob import glob
 from torchvision.transforms import v2 
 import os
 import numpy as np
 import torch
+
 
 def data_transform(mode,task,train,image_size):
 
@@ -38,15 +40,15 @@ def data_transform(mode,task,train,image_size):
         if train:
 
             transformations = v2.Compose([  v2.Resize([image_size,image_size],antialias=True),                                           
-                                            v2.RandomHorizontalFlip(p=0.5),
-                                            v2.RandomVerticalFlip(p=0.5),
-                                            v2.RandomRotation(degrees=(0, 90)),
-                                            #v2.RandomAdjustSharpness(sharpness_factor=10, p=0.),
-                                            #v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
-                                            #v2.RandomPerspective(distortion_scale=0.5, p=0.5),
-                                            #v2.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.75, 0.75)),
-                                            #v2.RandomPhotometricDistort(p=0.3),
-                                            #v2.Normalize(mean=(0.400, 0.485, 0.456, 0.406), std=(0,222, 0.229, 0.224, 0.225))                              
+                                        v2.RandomHorizontalFlip(p=0.5),
+                                        v2.RandomVerticalFlip(p=0.5),
+                                        v2.RandomRotation(degrees=(0, 90)),
+                                        #v2.RandomAdjustSharpness(sharpness_factor=10, p=0.),
+                                        #v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
+                                        #v2.RandomPerspective(distortion_scale=0.5, p=0.5),
+                                        #v2.RandomAffine(degrees=(30, 70), translate=(0.1, 0.3), scale=(0.75, 0.75)),
+                                        #v2.RandomPhotometricDistort(p=0.3),
+                                        #v2.Normalize(mean=(0.400, 0.485, 0.456, 0.406), std=(0,222, 0.229, 0.224, 0.225))                              
                                     ])
         else:
             transformations = v2.Compose([  v2.Resize([image_size,image_size],antialias=True),
@@ -110,7 +112,7 @@ def loader(mode,sslmode,train,batch_size,num_workers,image_size,cutout_pr,cutout
             data_test   = dataset(test_im_path, test_mask_path,cutout_pr,cutout_box, aug, transformations,mode)
 
     elif train:  #train for debug in local
-        data_train  = dataset(train_im_path,train_mask_path,cutout_pr,cutout_box, aug, transformations,mode)
+        data_train  = dataset(train_im_path[10:20],train_mask_path[10:20],cutout_pr,cutout_box, aug, transformations,mode)
 
     else:
         data_test   = dataset(test_im_path, test_mask_path,cutout_pr,cutout_box, aug, transformations,mode)
@@ -133,6 +135,7 @@ def loader(mode,sslmode,train,batch_size,num_workers,image_size,cutout_pr,cutout
         )
     
     return test_loader
+
 
 
 class SimCLRDataTransform(object):

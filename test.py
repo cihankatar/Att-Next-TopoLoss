@@ -10,15 +10,16 @@ from utils.metrics import *
 
 from data.data_loader import loader
 from augmentation.Augmentation import Cutout
-from models.Model4 import model_bce_topo
+from models.MISSFormer import MISSFormer    #224
+#from models.FAT_NET import FAT_Net          #224
 
-# from models.Model10 import  modelsep_topo
-# from models.Unet import UNET
-# from models.DoubleUnet import build_doubleunet
-# from models.Attunet import AttU_Net
-# from models.swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys
+#from models.Model4 import  model_bce_topo
+#from models.Unet import UNET
+from models.DoubleUnet import build_doubleunet
+#from models.Attunet import AttU_Net
+#from models.swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys
 # from models.TransUNET import TransUNet
-# from models.Unet import UNET
+#from models.Unet import UNET
 # from models.LevitUNET import Build_LeViT_UNet_192
 
 def using_device():
@@ -29,12 +30,16 @@ def using_device():
 if __name__ == "__main__":
 
     device          = using_device()
-    data            = 'isic_1'
+    data            = 'ham_1'
     training_mode   = "supervised"
     train           = False
 
-    if data     == 'isic_1':
+    if data     == 'isic_2018_1':
         foldernamepath="isic_1/"
+    elif data   == 'isic_2016_1':
+        foldernamepath="isic_2016_1/"
+    elif data   == 'PH2Dataset':
+        foldernamepath="PH2Dataset/"
     elif data   == 'kvasir_1':
         foldernamepath="kvasir_1/"
     elif data   == 'ham_1':
@@ -44,12 +49,13 @@ if __name__ == "__main__":
     WANDB_API_KEY       = os.environ["WANDB_API_KEY"]
     ML_DATA_OUTPUT      = os.environ["ML_DATA_OUTPUT"]+foldernamepath
 
-    args,res,config_res = parser_init("segmetnation_task","testing",training_mode,train)
-    res                 = ', '.join(res)
-    config_res          = ', '.join(config_res)
-    config              = wandb_init(WANDB_API_KEY,WANDB_DIR,args,config_res,data)
+    args,res = parser_init("segmetnation_task","testing",training_mode,train)
+    config              = wandb_init(WANDB_API_KEY,WANDB_DIR,args,data)
 
-    model               = model_bce_topo(config['n_classes'],config_res,args.mode,args.imnetpr).to(device)
+    #model = model_bce_topo(1, args.mode, args.imnetpr).to(device)
+    model = build_doubleunet().to(device)
+    #model = MISSFormer(config['n_classes'],args.mode,args.imnetpr).to(device)
+
     # model1            = UNET(1).to(device)
     # model2            = build_doubleunet().to(device)
     # model3            = AttU_Net().to(device)
@@ -57,23 +63,20 @@ if __name__ == "__main__":
     # model5            = SwinTransformerSys().to(device)
     # #model6           = Build_LeViT_UNet_192(num_classes=1, pretrained=True).to(device)
 
-
-    checkpoint_path      = ML_DATA_OUTPUT+str(model.__class__.__name__)+"["+str(res)+"]"
+    checkpoint_path = ML_DATA_OUTPUT+str(model.__class__.__name__)+str(res)
     # checkpoint_path1    = ML_DATA_OUTPUT+str(model1.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path2    = ML_DATA_OUTPUT+str(model2.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path3    = ML_DATA_OUTPUT+str(model3.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path4    = ML_DATA_OUTPUT+str(model4.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path5    = ML_DATA_OUTPUT+str(model5.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path6    = ML_DATA_OUTPUT+str(model6.__class__.__name__)+"["+str(res)+"]"
-
+    data            = 'isic_2018_1'
     trainable_params      = sum(	p.numel() for p in model.parameters() if p.requires_grad)
-    data                = 'ham_1'
     args.aug            = False
     args.shuffle        = True
     test_loader         = loader(args.mode, args.sslmode_modelname, args.train, args.bsize, args.workers, args.imsize, args.cutoutpr, args.cutoutbox, args.aug, args.shuffle, args.sratio, data)
 
     print(f"model path:",res)
-    print(f"pretrained nodel path :",config_res)
     print('test_loader loader transform',test_loader.dataset.tr)
     print(f"Testing for Model  : {model.__class__.__name__}, model params: {trainable_params}")
     print(f"training with {len(test_loader)*args.bsize} images")
@@ -91,7 +94,7 @@ if __name__ == "__main__":
             # #model6.load_state_dict(torch.load(checkpoint_path6, map_location=torch.device('cpu')))
 
     except:
-        raise Exception("******* No Checkpoint Path  *********")
+         raise Exception("******* No Checkpoint Path  *********")
     
     metrics_score = [ 0.0, 0.0, 0.0, 0.0, 0.0]
     model.eval()
@@ -109,7 +112,7 @@ if __name__ == "__main__":
        
         with torch.no_grad():
 
-            _,model_output     = model(images)
+            model_output     = model(images)
             # model_output1    = model1(images)
             # model_output2    = model2(images)
             # model_output3    = model3(images)

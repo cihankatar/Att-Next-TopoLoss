@@ -11,7 +11,7 @@ from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
-
+#from models.TransUNET import TransUNet
 from models.Model4 import model_bce_topo      #256
 #from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
@@ -78,22 +78,38 @@ def main():
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
     model = model_bce_topo(num_classes, args.mode, args.imnetpr).to(device)
-    #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
     checkpoint_path = folder_path+str(model.__class__.__name__)+str(res)
     optimizer = Adam(model.parameters(), lr=config['learningrate'])
     scheduler = CosineAnnealingLR(optimizer, config['epochs'], eta_min=config['learningrate'] / 10)
     loss_fn = Dice_CE_Loss()
-    
+
     if addtopoloss:
         from utils.Loss import Topological_Loss
         topo_loss_fn = Topological_Loss(lam=0.1).to(device)
+   
+    # from ptflops import get_model_complexity_info
+    # import re
 
-    print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
-    print('Train loader transform',train_loader.dataset.tr)
-    print('Val loader transform',val_loader.dataset.tr)
-    print(f"model config : {checkpoint_path}")
+    # macs, params = get_model_complexity_info(model, (3, 256, 256), as_strings=True,
+    # print_per_layer_stat=True, verbose=True)
+    # flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
+    # flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    # print('Computational complexity: {:<8}'.format(macs))
+    # print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
+    # print('Number of parameters: {:<8}'.format(params))
+
+    # print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
+    # print('Train loader transform',train_loader.dataset.tr)
+    # print('Val loader transform',val_loader.dataset.tr)
+    # print(f"model config : {checkpoint_path}")
+    
+    
+    from flopper import count_flops
+    batch = torch.randn(1, 3, 256, 256)
+    flops = count_flops(model, batch) # This will print the total number of FLOPs
+    print(flops.get_table())
 
     # Training and Validation Loops
     def run_epoch(loader, training=True):
@@ -117,16 +133,19 @@ def main():
 
                 loss_ = loss_fn.Dice_BCE_Loss(out, labels)
 
+                print(f"Loss Computational Complexity (FLOPs): {flops}")
                 if addtopoloss:
                     from utils.Loss import Topological_Loss
                     topo_loss = topo_loss_fn(out, labels)
                     total_loss = loss_ + topo_loss
                     epoch_topo_loss += topo_loss.item()
+                    
                 else:
                     total_loss = loss_
 
                 epoch_loss += total_loss.item()
                 epoch_loss_ += loss_.item()
+
 
                 # Calculate metrics during validation
                 if not training:
@@ -161,7 +180,13 @@ def main():
         wandb.log({"Train Loss": train_loss, "Train Dice Loss": train_loss_, "Train Topo Loss": train_topo_loss})
 
         # Validation
-        val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+        if epoch == 0:
+            # Compute validation losses but set metrics to zero
+            val_loss, val_loss_, val_topo_loss, _ = run_epoch(val_loader, training=False)
+            val_metrics = [0.0] * 5  # Set metrics to zero
+        else:
+            val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+
         wandb.log({
             "Val Loss": val_loss,
             "Val Dice Loss": val_loss_,

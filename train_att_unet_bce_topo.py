@@ -5,14 +5,14 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader5 import loader
-from utils.Loss import Dice_CE_Loss
+from data.data_loader import loader
+from utils.Loss_b import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-from models.Model import model_dice_bce      #256
+from models.Attunet import AttU_Net      #256
 #from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
@@ -60,7 +60,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, True, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -77,7 +77,7 @@ def main():
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    model = model_dice_bce(num_classes, args.mode, args.imnetpr).to(device)
+    model = AttU_Net().to(device)
     #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
@@ -95,7 +95,11 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
-    
+    from flopper import count_flops
+    batch = torch.randn(1, 3, 256, 256)
+    flops = count_flops(model, batch) # This will print the total number of FLOPs
+    print(flops.get_table())
+
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""

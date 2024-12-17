@@ -5,15 +5,14 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader5 import loader
+from data.data_loader import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
-
-from models.Model import model_dice_bce      #256
-#from models.FAT_NET import FAT_Net          #224
+#from models.Model4 import model_bce_topo      #256
+from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
 def load_deeplabv3(num_classes):             #256
@@ -77,7 +76,7 @@ def main():
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    model = model_dice_bce(num_classes, args.mode, args.imnetpr).to(device)
+    model = FAT_Net().to(device)
     #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
@@ -95,7 +94,12 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
-    
+    from flopper import count_flops
+    batch = torch.randn(1, 3, 224, 224)
+    flops = count_flops(model, batch) # This will print the total number of FLOPs
+    print(flops.get_table())
+
+
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""

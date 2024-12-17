@@ -5,7 +5,7 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader3 import loader
+from data.data_loader import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
@@ -59,7 +59,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2016_1', "supervised", True, False, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -94,7 +94,6 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
-    
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""
@@ -161,7 +160,13 @@ def main():
         wandb.log({"Train Loss": train_loss, "Train Dice Loss": train_loss_, "Train Topo Loss": train_topo_loss})
 
         # Validation
-        val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+        if epoch == 0:
+            # Compute validation losses but set metrics to zero
+            val_loss, val_loss_, val_topo_loss, _ = run_epoch(val_loader, training=False)
+            val_metrics = [0.0] * 5  # Set metrics to zero
+        else:
+            val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+            
         wandb.log({
             "Val Loss": val_loss,
             "Val Dice Loss": val_loss_,

@@ -5,7 +5,7 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader4 import loader
+from data.data_loader import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
@@ -59,7 +59,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, False, False
+    data, training_mode, train, addtopoloss, aug_reg = 'PH2Dataset', "supervised", True, False, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -88,6 +88,17 @@ def main():
     if addtopoloss:
         from utils.Loss import Topological_Loss
         topo_loss_fn = Topological_Loss(lam=0.1).to(device)
+
+    from ptflops import get_model_complexity_info
+    import re
+
+    macs, params = get_model_complexity_info(model, (3, 224, 224), as_strings=True,
+    print_per_layer_stat=True, verbose=True)
+    flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
+    flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    print('Computational complexity: {:<8}'.format(macs))
+    print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
+    print('Number of parameters: {:<8}'.format(params))
 
     print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
     print('Train loader transform',train_loader.dataset.tr)
@@ -161,7 +172,13 @@ def main():
         wandb.log({"Train Loss": train_loss, "Train Dice Loss": train_loss_, "Train Topo Loss": train_topo_loss})
 
         # Validation
-        val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+        if epoch == 0:
+            # Compute validation losses but set metrics to zero
+            val_loss, val_loss_, val_topo_loss, _ = run_epoch(val_loader, training=False)
+            val_metrics = [0.0] * 5  # Set metrics to zero
+        else:
+            val_loss, val_loss_, val_topo_loss, val_metrics = run_epoch(val_loader, training=False)
+            
         wandb.log({
             "Val Loss": val_loss,
             "Val Dice Loss": val_loss_,

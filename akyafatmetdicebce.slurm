@@ -3,7 +3,7 @@
 #SBATCH -p akya-cuda      							# Kuyruk adi: Uzerinde GPU olan kuyruk olmasina dikkat edin.
 #SBATCH -A ckatar          							# Kullanici adi
 #SBATCH -J train_fatnetdicebce   								# Gonderilen isin ismi
-#SBATCH -o train_fatnetdicebce.out			  			        	# Ciktinin yazilacagi dosya adi
+#SBATCH -o train_fatnetdicebceph2.out			  			        	# Ciktinin yazilacagi dosya adi
 #SBATCH --gres=gpu:2        							# Her bir sunucuda kac GPU istiyorsunuz? Kumeleri kontrol edin.
 #SBATCH -N 1                							# Gorev kac node'da calisacak?
 #SBATCH -n 1                							# Ayni gorevden kac adet calistirilacak?
@@ -17,4 +17,4 @@ eval "$(/truba/sw/centos7.3/lib/anaconda3/2021.11/bin/conda shell.bash hook)"
 
 conda activate segmentation
 cd /truba/home/ckatar/Desktop/Att-Next-TopoLoss
-python train_fatnetdicebce.py -p=False -i=224 -b=8 -x=0.5 -o=0.5 -e=300
+python train_fatnetdicebce.py -p=False -i=224 -b=8 -x=0.5 -o=0.5 -e=200
