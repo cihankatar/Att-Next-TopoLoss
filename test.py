@@ -10,13 +10,13 @@ from utils.metrics import *
 
 from data.data_loader import loader
 from augmentation.Augmentation import Cutout
-from models.MISSFormer import MISSFormer    #224
+#from models.MISSFormer import MISSFormer    #224
 #from models.FAT_NET import FAT_Net          #224
 
 #from models.Model4 import  model_bce_topo
 #from models.Unet import UNET
-from models.DoubleUnet import build_doubleunet
-#from models.Attunet import AttU_Net
+#from models.DoubleUnet import build_doubleunet
+from models.Attunet import AttU_Net
 #from models.swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys
 # from models.TransUNET import TransUNet
 #from models.Unet import UNET
@@ -53,8 +53,7 @@ if __name__ == "__main__":
     config              = wandb_init(WANDB_API_KEY,WANDB_DIR,args,data)
 
     #model = model_bce_topo(1, args.mode, args.imnetpr).to(device)
-    model = build_doubleunet().to(device)
-    #model = MISSFormer(config['n_classes'],args.mode,args.imnetpr).to(device)
+    model = AttU_Net().to(device)
 
     # model1            = UNET(1).to(device)
     # model2            = build_doubleunet().to(device)
@@ -70,7 +69,7 @@ if __name__ == "__main__":
     # checkpoint_path4    = ML_DATA_OUTPUT+str(model4.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path5    = ML_DATA_OUTPUT+str(model5.__class__.__name__)+"["+str(res)+"]"
     # checkpoint_path6    = ML_DATA_OUTPUT+str(model6.__class__.__name__)+"["+str(res)+"]"
-    data            = 'isic_2018_1'
+    data            = 'PH2Dataset'
     trainable_params      = sum(	p.numel() for p in model.parameters() if p.requires_grad)
     args.aug            = False
     args.shuffle        = True

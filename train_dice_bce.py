@@ -5,7 +5,7 @@ from tqdm import tqdm, trange
 from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
-from data.data_loader5 import loader
+from data.data_loader import loader
 from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
@@ -84,7 +84,7 @@ def main():
     checkpoint_path = folder_path+str(model.__class__.__name__)+str(res)
     optimizer = Adam(model.parameters(), lr=config['learningrate'])
     scheduler = CosineAnnealingLR(optimizer, config['epochs'], eta_min=config['learningrate'] / 10)
-    loss_fn = Dice_CE_Loss()
+    loss_fn   = Dice_CE_Loss()
     
     if addtopoloss:
         from utils.Loss import Topological_Loss
@@ -95,7 +95,7 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
-    
+
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""
