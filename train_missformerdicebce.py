@@ -89,23 +89,29 @@ def main():
         from utils.Loss import Topological_Loss
         topo_loss_fn = Topological_Loss(lam=0.1).to(device)
 
-    from ptflops import get_model_complexity_info
-    import re
-
-    macs, params = get_model_complexity_info(model, (3, 224, 224), as_strings=True,
-    print_per_layer_stat=True, verbose=True)
-    flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
-    flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
-    print('Computational complexity: {:<8}'.format(macs))
-    print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
-    print('Number of parameters: {:<8}'.format(params))
-
     print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
     print('Train loader transform',train_loader.dataset.tr)
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
     
-    
+
+    from ptflops import get_model_complexity_info
+    import re
+
+    # Define the model and input size
+    macs, params = get_model_complexity_info(model,(3, 224, 224),as_strings=True,print_per_layer_stat=True,verbose=True)
+    # Parse and calculate FLOPs
+    macs_value = float(re.findall(r'([\d.]+)', macs)[0]) * 2
+    macs_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    flops = f"{macs_value} {macs_unit}Flops"
+
+    # Print results
+    print(model.__class__.__name__)
+    print(f"Computational complexity (FLOPs): {flops}")
+    print(f"Number of parameters: {params}")
+
+
+
     # Training and Validation Loops
     def run_epoch(loader, training=True):
         """Run a single training or validation epoch."""

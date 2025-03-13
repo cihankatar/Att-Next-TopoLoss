@@ -16,21 +16,46 @@ from augmentation.Augmentation import Cutout
 #from models.Model4 import  model_bce_topo
 #from models.Unet import UNET
 #from models.DoubleUnet import build_doubleunet
-from models.Attunet import AttU_Net
+#from models.Attunet import AttU_Net
 #from models.swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys
 # from models.TransUNET import TransUNet
 #from models.Unet import UNET
-# from models.LevitUNET import Build_LeViT_UNet_192
+# from models.LevitUNET import Build_LeViT_UNet_192#from models.BDFormer.BDFormer import BDFormer    #256
+#from models.CFATransUnet.CFATransUnet import CFATransUnet    #224
+
+from models.DTrAttUnet.DTrAttUnet import DTrAttUnet   #224
+#from models.FCTNet.FCT_Net import FCTNet   #224
+#from models.mednext.mednext2d import MedNeXtSegmentationModel   #224
+#from models.RFAUCNext.rfau_cnxt import ResponseFusionAttentionUConvNextBase   #224
+#from models.TransAttUnet.TransAttUnet import TransAttUnet  #256
+#from models.FAT_NET import FAT_Net          #224
+#from models.MISSFormer import MISSFormer    #224
+
 
 def using_device():
     device      = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device: ", device, f"({torch.cuda.get_device_name(device)})" if torch.cuda.is_available() else "") 
     return device
 
+def process_model_output(model, images):
+    """Process the output of the model based on its type."""
+    model_type = model.__class__.__name__
+    if model_type == 'DeepLabV3' :
+        out = model(images)
+        return out['out']
+    
+    elif model_type in ['PyramidVisionTransformerV2', 'DTrAttUnet','MedNeXtSegmentationModel']:
+        out = model(images)
+        return out[0]
+    
+    return model(images)
+    
+
+
 if __name__ == "__main__":
 
     device          = using_device()
-    data            = 'ham_1'
+    data            = 'isic_2018_1'
     training_mode   = "supervised"
     train           = False
 
@@ -53,7 +78,7 @@ if __name__ == "__main__":
     config              = wandb_init(WANDB_API_KEY,WANDB_DIR,args,data)
 
     #model = model_bce_topo(1, args.mode, args.imnetpr).to(device)
-    model = AttU_Net().to(device)
+    #model = AttU_Net().to(device)
 
     # model1            = UNET(1).to(device)
     # model2            = build_doubleunet().to(device)
@@ -61,16 +86,19 @@ if __name__ == "__main__":
     # model4            = TransUNet(img_dim=256,in_channels=3,out_channels=128,head_num=4,mlp_dim=512,block_num=8,patch_dim=16,class_num=1)
     # model5            = SwinTransformerSys().to(device)
     # #model6           = Build_LeViT_UNet_192(num_classes=1, pretrained=True).to(device)
+    
+    # model  = BDFormer(img_size=256, in_channels=3, num_classes=1, window_size=8).to(device)
+    # model = CFATransUnet().to(device)
+    model = DTrAttUnet(in_channels=3,out_channels=1,img_size=224).to(device)
+    # model = FCTNet().to(device)
+    # model =  MedNeXtSegmentationModel().to(device)
+    # model = ResponseFusionAttentionUConvNextBase().to(device)
+    # model = TransAttUnet().to(device)
 
     checkpoint_path = ML_DATA_OUTPUT+str(model.__class__.__name__)+str(res)
-    # checkpoint_path1    = ML_DATA_OUTPUT+str(model1.__class__.__name__)+"["+str(res)+"]"
-    # checkpoint_path2    = ML_DATA_OUTPUT+str(model2.__class__.__name__)+"["+str(res)+"]"
-    # checkpoint_path3    = ML_DATA_OUTPUT+str(model3.__class__.__name__)+"["+str(res)+"]"
-    # checkpoint_path4    = ML_DATA_OUTPUT+str(model4.__class__.__name__)+"["+str(res)+"]"
-    # checkpoint_path5    = ML_DATA_OUTPUT+str(model5.__class__.__name__)+"["+str(res)+"]"
-    # checkpoint_path6    = ML_DATA_OUTPUT+str(model6.__class__.__name__)+"["+str(res)+"]"
-    data            = 'PH2Dataset'
-    trainable_params      = sum(	p.numel() for p in model.parameters() if p.requires_grad)
+    
+    #data            = 'isic_2018_1' # to generalized the model giving different dataset. 
+    trainable_params      = sum(p.numel() for p in model.parameters() if p.requires_grad)
     args.aug            = False
     args.shuffle        = True
     test_loader         = loader(args.mode, args.sslmode_modelname, args.train, args.bsize, args.workers, args.imsize, args.cutoutpr, args.cutoutbox, args.aug, args.shuffle, args.sratio, data)
@@ -111,7 +139,7 @@ if __name__ == "__main__":
        
         with torch.no_grad():
 
-            model_output     = model(images)
+            model_output = process_model_output(model,images)
             # model_output1    = model1(images)
             # model_output2    = model2(images)
             # model_output3    = model3(images)

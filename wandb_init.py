@@ -35,7 +35,7 @@ def config_func(training_mode):
         "imnetpr"           :False,
         "bsize"             :8,
         "epochs"            :300,
-        "imsize"            :256,
+        "imsize"            :224,
         "lrate"             :0.0001,
         "aug"               :True,
         "shuffle"           :True,

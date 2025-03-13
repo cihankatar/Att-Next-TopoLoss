@@ -6,13 +6,19 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchvision import transforms
 from data.data_loader import loader
-from utils.Loss_b import Dice_CE_Loss
+from utils.Loss import Dice_CE_Loss
 from augmentation.Augmentation import Cutout, cutmix
 from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-from models.swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys      #256
+#from models.BDFormer.BDFormer import BDFormer    #256
+#from models.CFATransUnet.CFATransUnet import CFATransUnet    #224
+from models.DTrAttUnet.DTrAttUnet import DTrAttUnet   #224
+#from models.FCTNet.FCT_Net import FCTNet   #224
+#from models.mednext.mednext2d import MedNeXtSegmentationModel   #224
+#from models.RFAUCNext.rfau_cnxt import ResponseFusionAttentionUConvNextBase   #224
+#from models.TransAttUnet.TransAttUnet import TransAttUnet  #256
 #from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
@@ -25,10 +31,14 @@ def load_deeplabv3(num_classes):             #256
 def process_model_output(model, images):
     """Process the output of the model based on its type."""
     model_type = model.__class__.__name__
-    if model_type == 'DeepLabV3':
+    if model_type == 'DeepLabV3' :
         out = model(images)
         return out['out']
-    # Default case
+    
+    elif model_type in ['PyramidVisionTransformerV2', 'DTrAttUnet','MedNeXtSegmentationModel']:
+        out = model(images)
+        return out[0]
+    
     return model(images)
 
 def load_config(config_name):
@@ -60,7 +70,7 @@ def setup_paths(data):
 # Main Function
 def main():
     # Configuration and Initial Setup
-    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, True, False
+    data, training_mode, train, addtopoloss, aug_reg = 'isic_2018_1', "supervised", True, False, False
     aug_threshould, best_valid_loss = 0, float("inf")
     device = using_device()
     folder_path = setup_paths(data)
@@ -77,14 +87,22 @@ def main():
 
     # Model, Loss, Optimizer, Scheduler
     num_classes = config['n_classes']
-    model = SwinTransformerSys().to(device)
+    
+    #model  = BDFormer(img_size=256, in_channels=3, num_classes=1, window_size=8).to(device)
+    #model = CFATransUnet().to(device)
+    model = DTrAttUnet(in_channels=3,out_channels=1,img_size=224).to(device)
+    #model = FCTNet().to(device)
+    #model =  MedNeXtSegmentationModel().to(device)
+    #model = ResponseFusionAttentionUConvNextBase().to(device)
+    #model = TransAttUnet().to(device)
+
     #model = load_deeplabv3(num_classes).to(device)
     #model = FAT_Net().to(device)
     #model = MISSFormer().to(device)
     checkpoint_path = folder_path+str(model.__class__.__name__)+str(res)
     optimizer = Adam(model.parameters(), lr=config['learningrate'])
     scheduler = CosineAnnealingLR(optimizer, config['epochs'], eta_min=config['learningrate'] / 10)
-    loss_fn = Dice_CE_Loss()
+    loss_fn   = Dice_CE_Loss()
     
     if addtopoloss:
         from utils.Loss import Topological_Loss
@@ -98,31 +116,17 @@ def main():
     from ptflops import get_model_complexity_info
     import re
 
-    macs, params = get_model_complexity_info(model, (3, 224, 224), as_strings=True,
-    print_per_layer_stat=True, verbose=True)
-    flops = eval(re.findall(r'([\d.]+)', macs)[0])*2
-    flops_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
-    print('Computational complexity: {:<8}'.format(macs))
-    print('Computational complexity: {} {}Flops'.format(flops, flops_unit))
-    print('Number of parameters: {:<8}'.format(params))
+    # Define the model and input size
+    macs, params = get_model_complexity_info(model,(3, 224, 224),as_strings=True,print_per_layer_stat=True,verbose=True)
+    # Parse and calculate FLOPs
+    macs_value = float(re.findall(r'([\d.]+)', macs)[0]) * 2
+    macs_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    flops = f"{macs_value} {macs_unit}Flops"
 
-    print(f"Training on {len(train_loader) * args.bsize} images. Saving checkpoints to {folder_path}")
-    print('Train loader transform',train_loader.dataset.tr)
-    print('Val loader transform',val_loader.dataset.tr)
-    print(f"model config : {checkpoint_path}")
-
-    from flopper import count_flops
-    batch = torch.randn(1, 3, 224, 224)
-    flops = count_flops(model, batch) # This will print the total number of FLOPs
-    print(flops.get_table())
-
-
-    from fvcore.nn import FlopCountAnalysis
-
-    flop_analysis = FlopCountAnalysis(model, batch)
-    print(f"Total FLOPs: {flop_analysis.total() / 1e9:.2f} GFLOPs")
-    # Training and Validation Loops
-
+    # Print results
+    print(model.__class__.__name__)
+    print(f"Computational complexity (FLOPs): {flops}")
+    print(f"Number of parameters: {params}")
 
     # Training and Validation Loops
     def run_epoch(loader, training=True):
@@ -147,7 +151,6 @@ def main():
                 loss_ = loss_fn.Dice_BCE_Loss(out, labels)
 
                 if addtopoloss:
-                    from utils.Loss import Topological_Loss
                     topo_loss = topo_loss_fn(out, labels)
                     total_loss = loss_ + topo_loss
                     epoch_topo_loss += topo_loss.item()

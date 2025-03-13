@@ -12,13 +12,13 @@ from wandb_init import parser_init, wandb_init
 import yaml
 from utils.metrics import calculate_metrics
 
-from models.BDFormer.BDFormer import BDFormer    #256
-from models.CFATransUnet.CFATransUnet import CFATransUnet    #224
-from models.DTrAttUnet.DTrAttUnet import DTrAttUnet   #224
-from models.FCTNet.FCT_Net import FCTNet   #224
-from models.mednext.mednext2d import MedNeXtSegmentationModel   #224
+#from models.BDFormer.BDFormer import BDFormer    #256
+#from models.CFATransUnet.CFATransUnet import CFATransUnet    #224
+#from models.DTrAttUnet.DTrAttUnet import DTrAttUnet   #224
+#from models.FCTNet.FCT_Net import FCTNet   #224
+#from models.mednext.mednext2d import MedNeXtSegmentationModel   #224
 from models.RFAUCNext.rfau_cnxt import ResponseFusionAttentionUConvNextBase   #224
-from models.TransAttUnet.TransAttUnet import TransAttUnet  #256
+#from models.TransAttUnet.TransAttUnet import TransAttUnet  #256
 #from models.FAT_NET import FAT_Net          #224
 #from models.MISSFormer import MISSFormer    #224
 
@@ -67,6 +67,8 @@ def setup_paths(data):
     return os.path.join(base_path, folder)
 
 
+
+
 # Main Function
 def main():
     # Configuration and Initial Setup
@@ -113,6 +115,33 @@ def main():
     print('Val loader transform',val_loader.dataset.tr)
     print(f"model config : {checkpoint_path}")
 
+
+    from flopper import count_flops
+    batch = torch.randn(1, 3, 256, 256)
+    flops = count_flops(model, batch) # This will print the total number of FLOPs
+    print(flops.get_table())
+
+
+    from fvcore.nn import FlopCountAnalysis
+
+    flop_analysis = FlopCountAnalysis(model, batch)
+    print(f"Total FLOPs: {flop_analysis.total() / 1e9:.2f} GFLOPs")
+    # Training and Validation Loops
+
+    from ptflops import get_model_complexity_info
+    import re
+
+    # Define the model and input size
+    macs, params = get_model_complexity_info(model,(3, 224, 224),as_strings=True,print_per_layer_stat=True,verbose=True)
+    # Parse and calculate FLOPs
+    macs_value = float(re.findall(r'([\d.]+)', macs)[0]) * 2
+    macs_unit = re.findall(r'([A-Za-z]+)', macs)[0][0]
+    flops = f"{macs_value} {macs_unit}Flops"
+
+    # Print results
+    print(model.__class__.__name__)
+    print(f"Computational complexity (FLOPs): {flops}")
+    print(f"Number of parameters: {params}")
 
     # Training and Validation Loops
     def run_epoch(loader, training=True):
